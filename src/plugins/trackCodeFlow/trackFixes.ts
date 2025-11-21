@@ -20,6 +20,8 @@ export function getFixes(diagnostic: BsDiagnostic): ChangeEntry {
     switch (diagnostic.code) {
         case VarLintError.CaseMismatch:
             return fixCasing(diagnostic);
+        case VarLintError.UnusedParameter:
+            return fixUnusedParameter(diagnostic);
         default:
             return null;
     }
@@ -31,6 +33,17 @@ function fixCasing(diagnostic: BsDiagnostic) {
         diagnostic,
         changes: [
             replaceText(data.range, data.name)
+        ]
+    };
+}
+
+function fixUnusedParameter(diagnostic: BsDiagnostic) {
+    const data: { name: string; range: Range } = diagnostic.data;
+    const newName = `_${data.name}`;
+    return {
+        diagnostic,
+        changes: [
+            replaceText(data.range, newName, data.name)
         ]
     };
 }
