@@ -108,10 +108,10 @@ function createContext(program) {
         checkUsage,
         addFixes: (file, entry) => {
             if (!pendingFixes.has(file.pathAbsolute)) {
-                pendingFixes.set(file.pathAbsolute, entry.changes);
+                pendingFixes.set(file.pathAbsolute, [entry]);
             }
             else {
-                pendingFixes.get(file.pathAbsolute).push(...entry.changes);
+                pendingFixes.get(file.pathAbsolute).push(entry);
             }
         },
         applyFixes: () => (0, Linter_1.addJob)((0, textEdit_1.applyFixes)(fix, pendingFixes)),

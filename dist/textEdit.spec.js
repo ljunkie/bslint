@@ -70,23 +70,29 @@ describe('getLineOffsets', () => {
 });
 describe('applyEdits', () => {
     it('Edits in the right order', () => {
-        const newSrc = (0, textEdit_1.applyEdits)('line 1\nline 2', [{
-                range: vscode_languageserver_types_1.Range.create(0, 0, 0, 6),
-                text: 'replaced line 1!'
-            }, {
-                range: vscode_languageserver_types_1.Range.create(1, 5, 1, 6),
-                text: '(2)'
-            }]);
+        const edits = [
+            {
+                diagnostic: { code: 0, message: 'dummy' },
+                changes: [
+                    { range: vscode_languageserver_types_1.Range.create(0, 0, 0, 6), text: 'replaced line 1!' },
+                    { range: vscode_languageserver_types_1.Range.create(1, 5, 1, 6), text: '(2)' }
+                ]
+            }
+        ];
+        const { newSrc } = (0, textEdit_1.applyEdits)('line 1\nline 2', edits);
         (0, chai_1.expect)(newSrc).equals('replaced line 1!\nline (2)');
     });
     it('Edits in the reverse order', () => {
-        const newSrc = (0, textEdit_1.applyEdits)('line 1\nline 2', [{
-                range: vscode_languageserver_types_1.Range.create(1, 5, 1, 6),
-                text: '(2)'
-            }, {
-                range: vscode_languageserver_types_1.Range.create(0, 0, 0, 6),
-                text: 'replaced line 1!'
-            }]);
+        const edits = [
+            {
+                diagnostic: { code: 0, message: 'dummy' },
+                changes: [
+                    { range: vscode_languageserver_types_1.Range.create(1, 5, 1, 6), text: '(2)' },
+                    { range: vscode_languageserver_types_1.Range.create(0, 0, 0, 6), text: 'replaced line 1!' }
+                ]
+            }
+        ];
+        const { newSrc } = (0, textEdit_1.applyEdits)('line 1\nline 2', edits);
         (0, chai_1.expect)(newSrc).equals('replaced line 1!\nline (2)');
     });
 });

@@ -18,6 +18,8 @@ function getFixes(diagnostic) {
     switch (diagnostic.code) {
         case varTracking_1.VarLintError.CaseMismatch:
             return fixCasing(diagnostic);
+        case varTracking_1.VarLintError.UnusedParameter:
+            return fixUnusedParameter(diagnostic);
         default:
             return null;
     }
@@ -29,6 +31,16 @@ function fixCasing(diagnostic) {
         diagnostic,
         changes: [
             (0, textEdit_1.replaceText)(data.range, data.name)
+        ]
+    };
+}
+function fixUnusedParameter(diagnostic) {
+    const data = diagnostic.data;
+    const newName = `_${data.name}`;
+    return {
+        diagnostic,
+        changes: [
+            (0, textEdit_1.replaceText)(data.range, newName, data.name)
         ]
     };
 }

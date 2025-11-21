@@ -1,6 +1,6 @@
 import { BsLintConfig, BsLintRules } from './index';
 import { Program, BscFile, DiagnosticSeverity } from 'brighterscript';
-import { ChangeEntry, TextEdit } from './textEdit';
+import { ChangeEntry } from './textEdit';
 export declare function getDefaultRules(): BsLintConfig['rules'];
 export declare function getDefaultSeverity(): {
     assignAllPath: DiagnosticSeverity;
@@ -44,7 +44,7 @@ export interface PluginContext {
     addFixes: (file: BscFile, entry: ChangeEntry) => void;
 }
 export interface PluginWrapperContext extends PluginContext {
-    pendingFixes: Map<string, TextEdit[]>;
+    pendingFixes: Map<string, ChangeEntry[]>;
     applyFixes: () => Promise<void>;
 }
 export declare function createContext(program: Program): PluginWrapperContext;

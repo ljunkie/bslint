@@ -5,11 +5,12 @@ const fs_1 = require("fs");
 const fs_extra_1 = require("fs-extra");
 const brighterscript_1 = require("brighterscript");
 const CodeActionUtil_1 = require("brighterscript/dist/CodeActionUtil");
-function replaceText(range, text) {
+function replaceText(range, text, expectedText) {
     return {
         type: 'replace',
         range,
-        text
+        text,
+        expectedText
     };
 }
 exports.replaceText = replaceText;
@@ -79,17 +80,34 @@ function rangeToOffset(lineOffsets, range) {
     };
 }
 exports.rangeToOffset = rangeToOffset;
-function applyEdits(src, changes) {
+function applyEdits(src, entries) {
     const lineOffsets = getLineOffsets(src);
-    const edits = [...changes].sort(compareRanges).reverse();
+    // flatten while keeping diagnostic reference
+    const editsWithDiag = entries.flatMap(entry => entry.changes.map(edit => ({ edit, diagnostic: entry.diagnostic })));
+    const sortedEdits = [...editsWithDiag].sort((a, b) => compareRanges(a.edit, b.edit)).reverse();
     let newSrc = src;
-    edits.forEach(edit => {
+    const skippedEdits = [];
+    for (const { edit, diagnostic } of sortedEdits) {
         const offsets = rangeToOffset(lineOffsets, edit.range);
-        if (offsets) {
-            newSrc = newSrc.substr(0, offsets.start) + edit.text + newSrc.substr(offsets.end);
+        if (!offsets) {
+            continue;
         }
-    });
-    return newSrc;
+        if (edit.expectedText) {
+            const currentText = newSrc.slice(offsets.start, offsets.end);
+            if (currentText !== edit.expectedText) {
+                skippedEdits.push({
+                    edit,
+                    diagnostic,
+                    startOffset: offsets.start,
+                    endOffset: offsets.end,
+                    foundText: currentText
+                });
+                continue;
+            }
+        }
+        newSrc = newSrc.slice(0, offsets.start) + edit.text + newSrc.slice(offsets.end);
+    }
+    return { newSrc, skippedEdits };
 }
 exports.applyEdits = applyEdits;
 async function applyFixes(fix, pendingFixes) {
@@ -97,11 +115,18 @@ async function applyFixes(fix, pendingFixes) {
         return;
     }
     for (const file of pendingFixes.keys()) {
-        const changes = pendingFixes.get(file);
-        if ((changes === null || changes === void 0 ? void 0 : changes.length) && (0, fs_1.existsSync)(file)) {
+        const entries = pendingFixes.get(file);
+        if ((entries === null || entries === void 0 ? void 0 : entries.length) && (0, fs_1.existsSync)(file)) {
             const src = (await (0, fs_extra_1.readFile)(file)).toString();
-            const newSrc = applyEdits(src, changes);
-            if (newSrc !== src) {
+            const { newSrc, skippedEdits } = applyEdits(src, entries);
+            if (skippedEdits.length > 0) {
+                skippedEdits.forEach((skipped) => {
+                    console.warn(`Skipped fix in ${file} at range [${skipped.startOffset}, ${skipped.endOffset}]: ` +
+                        `expected "${skipped.edit.expectedText}", found "${skipped.foundText}"\n` +
+                        `Diagnostic: ${skipped.diagnostic.message}`);
+                });
+            }
+            else if (newSrc !== src) {
                 await (0, fs_extra_1.writeFile)(file, newSrc);
             }
         }

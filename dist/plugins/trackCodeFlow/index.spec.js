@@ -276,7 +276,9 @@ describe('trackCodeFlow', () => {
             } }));
         const actual = (0, testHelpers_spec_1.fmtDiagnostics)(diagnostics);
         const expected = [
-            `01:LINT1006:Parameter 'unusedParam' is set but value is never used`
+            `01:LINT1006:Parameter 'unusedParam' is set but value is never used`,
+            `06:LINT1006:Parameter 'unusedParamNoLocal' is set but value is never used`,
+            `09:LINT1006:Parameter 'unusedParamNoLocal' is set but value is never used`
         ];
         (0, chai_1.expect)(actual).deep.equal(expected);
     });

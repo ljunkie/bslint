@@ -71,6 +71,7 @@ function createVarLinter(lintContext, file, fun, state, diagnostics) {
         };
         if (arg) {
             verifyVarCasing(arg, name);
+            arg.isUsed = true;
             return local;
         }
         if (!parent.locals) {
@@ -130,7 +131,7 @@ function createVarLinter(lintContext, file, fun, state, diagnostics) {
         var _a;
         const { stat } = block;
         if ((0, brighterscript_1.isForStatement)(stat)) {
-            // for iterator will be declared by the next assignement statement
+            // for iterator will be declared by the next assignment statement
         }
         else if ((0, brighterscript_1.isForEachStatement)(stat)) {
             // declare `for each` iterator variable
@@ -192,7 +193,8 @@ function createVarLinter(lintContext, file, fun, state, diagnostics) {
         const { locals, branches, returns } = closed;
         const { parent } = state;
         if (!locals || !parent) {
-            if (locals) {
+            // Finalize when there's no parent, i.e. end of function
+            if (!parent) {
                 finalize(locals);
             }
             return;
@@ -336,7 +338,7 @@ function createVarLinter(lintContext, file, fun, state, diagnostics) {
         return true;
     }
     function finalize(locals) {
-        locals.forEach(local => {
+        locals === null || locals === void 0 ? void 0 : locals.forEach(local => {
             if (!local.isUsed && !local.restriction) {
                 diagnostics.push({
                     severity: severity.unusedVariable,
@@ -347,7 +349,7 @@ function createVarLinter(lintContext, file, fun, state, diagnostics) {
                 });
             }
         });
-        args.forEach(arg => {
+        args === null || args === void 0 ? void 0 : args.forEach(arg => {
             // treat a leading underscore as an intentionally unused parameter
             if (!arg.isUsed && !arg.name.startsWith('_')) {
                 diagnostics.push({
@@ -355,7 +357,11 @@ function createVarLinter(lintContext, file, fun, state, diagnostics) {
                     code: VarLintError.UnusedParameter,
                     message: `Parameter '${arg.name}' is set but value is never used`,
                     range: arg.range,
-                    file: file
+                    file: file,
+                    data: {
+                        name: arg.name,
+                        range: arg.range
+                    }
                 });
             }
         });
